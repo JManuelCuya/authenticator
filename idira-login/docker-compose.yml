@@ -1,0 +1,13 @@
+services:
+  app:
+    build: .
+    image: idira-login:latest
+    container_name: idira-login
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      HOST: 0.0.0.0
+      NO_OPEN: "1"
+    # Solo accesible desde el propio VPS: Nginx (con HTTPS) hace de puerta de entrada
+    ports:
+      - "127.0.0.1:3000:3000"

@@ -1,0 +1,14 @@
+<%- include('../partials/header', { title: 'Inicio' }) %>
+
+<h1>Bienvenido, <%= user.nombre || user.usuario %></h1>
+<p>Tus credenciales fueron validadas por Idira.</p>
+
+<table>
+  <% Object.entries(user).filter(([, v]) => v).forEach(([k, v]) => { %>
+    <tr><td><%= k %></td><td><%= v %></td></tr>
+  <% }) %>
+</table>
+
+<a class="btn secondary" href="/auth/logout">Cerrar sesión</a>
+
+<%- include('../partials/footer') %>

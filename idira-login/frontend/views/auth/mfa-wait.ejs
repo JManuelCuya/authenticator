@@ -1,0 +1,9 @@
+<%- include('../partials/header', { title: 'Aprueba el acceso', refresh: '3;url=/auth/mfa/consultar' }) %>
+
+<h1>Aprueba el acceso</h1>
+<p><%= mech.label %>: revisa tu dispositivo y aprueba la solicitud. Esta página se actualiza sola.</p>
+<div class="spinner" aria-hidden="true"></div>
+
+<a class="link" href="/auth/logout">Cancelar</a>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,18 @@
+<%- include('../partials/header', { title: 'Iniciar sesión' }) %>
+
+<h1>Iniciar sesión</h1>
+
+<% if (error) { %><p class="error"><%= error %></p><% } %>
+<% if (!idira.configured) { %>
+  <p class="error">Idira no configurado. Faltan en .env: <%= idira.missing.join(', ') %></p>
+<% } %>
+
+<form method="post" action="/auth/login">
+  <label for="u">Usuario</label>
+  <input id="u" name="username" autocomplete="username" value="<%= username %>" required autofocus>
+  <label for="p">Contraseña</label>
+  <input id="p" name="password" type="password" autocomplete="current-password" required>
+  <button class="btn" type="submit">Ingresar</button>
+</form>
+
+<%- include('../partials/footer') %>

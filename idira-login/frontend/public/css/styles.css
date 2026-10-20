@@ -1,0 +1,99 @@
+:root {
+  color-scheme: light dark;
+  --bg: #f3f4f6;
+  --card: #fff;
+  --text: #111;
+  --muted: #555;
+  --border: #d1d5db;
+  --primary: #0b5fff;
+  --secondary: #e5e7eb;
+  --error: #b91c1c;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111827;
+    --card: #1f2937;
+    --text: #f9fafb;
+    --muted: #d1d5db;
+    --border: #374151;
+    --secondary: #374151;
+    --error: #f87171;
+  }
+}
+
+body {
+  font-family: system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.card {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 32px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  box-sizing: border-box;
+}
+
+h1 { margin: 0 0 8px; font-size: 1.4rem; }
+p { color: var(--muted); }
+.error { color: var(--error); }
+
+label { display: block; font-size: 0.9rem; font-weight: 600; margin: 12px 0 4px; }
+
+input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 1rem;
+  background: inherit;
+  color: inherit;
+}
+
+.btn {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: center;
+  background: var(--primary);
+  color: #fff;
+  text-decoration: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  border: 0;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-top: 16px;
+}
+.btn.secondary { background: var(--secondary); color: var(--text); }
+
+.link { display: block; text-align: center; margin-top: 16px; color: var(--muted); font-size: 0.9rem; }
+.badge { font-size: 0.8rem; text-align: center; margin: 24px 0 0; }
+
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.85rem; }
+td { border-bottom: 1px solid var(--border); padding: 6px 4px; word-break: break-all; vertical-align: top; }
+td:first-child { font-weight: 600; width: 35%; }
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  margin: 24px auto;
+  border: 4px solid var(--secondary);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }

@@ -1,0 +1,15 @@
+<%- include('../partials/header', { title: 'Verificación adicional' }) %>
+
+<h1>Verificación adicional</h1>
+<p>Idira pide un factor más. Elige cómo verificarte:</p>
+
+<% mechanisms.forEach((m) => { %>
+  <form method="post" action="/auth/mfa/elegir">
+    <input type="hidden" name="id" value="<%= m.id %>">
+    <button class="btn <%= m.primary ? '' : 'secondary' %>" type="submit"><%= m.label %></button>
+  </form>
+<% }) %>
+
+<a class="link" href="/auth/logout">Cancelar</a>
+
+<%- include('../partials/footer') %>

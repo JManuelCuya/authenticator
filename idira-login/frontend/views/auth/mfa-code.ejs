@@ -1,0 +1,17 @@
+<% const isSecret = mech.answerType === 'Text' && /contrase/i.test(mech.label); %>
+<%- include('../partials/header', { title: mech.label }) %>
+
+<h1><%= mech.label %></h1>
+
+<form method="post" action="/auth/mfa/codigo">
+  <label for="c"><%= isSecret ? 'Contraseña' : 'Código' %></label>
+  <input id="c" name="code" type="<%= isSecret ? 'password' : 'text' %>" autocomplete="one-time-code" required autofocus>
+  <button class="btn" type="submit">Verificar</button>
+</form>
+
+<% if (mech.answerType === 'StartTextOob') { %>
+  <a class="btn secondary" href="/auth/mfa/esperar">Ya lo aprobé desde el enlace</a>
+<% } %>
+<a class="link" href="/auth/logout">Cancelar</a>
+
+<%- include('../partials/footer') %>
