@@ -13,6 +13,7 @@ RUN npm ci --omit=dev && npm cache clean --force
 
 COPY backend ./backend
 COPY frontend ./frontend
+COPY certs ./certs
 
 # Sin privilegios de root
 USER node

@@ -16,6 +16,33 @@ Navegador ──usuario+contraseña──▶ Tu servidor ──StartAuthenticati
 Los usuarios y contraseñas viven **solo en Idira** (o en el AD conectado a Idira). La app no
 guarda credenciales.
 
+## Login por SAML (Idira como IdP)
+
+Además del formulario (API), la app tiene un botón **"Ingresar con Idira (SAML)"**. Ahí la app
+actúa como *Service Provider* (SP): redirige a Idira, el usuario se autentica allí, e Idira
+devuelve una respuesta firmada al **ACS URL**.
+
+**Datos que entregas al IdP** (también se ven en `http://localhost:3000/auth/saml/info`):
+
+| Dato | Valor en local |
+|---|---|
+| ACS URL | `http://localhost:3000/auth/saml/acs` |
+| Entity ID (SP) | `http://localhost:3000/auth/saml/metadata` |
+| Metadata del SP | `http://localhost:3000/auth/saml/metadata` |
+| Binding | HTTP-POST |
+| NameID | correo o login name |
+
+**Datos que te devuelve Idira** (en la app SAML, pestaña *Trust*), para poner en `.env`:
+
+| Variable | Qué es |
+|---|---|
+| `SAML_IDP_SSO_URL` | IdP / Single Sign On URL |
+| `SAML_IDP_CERT_FILE` | certificado de firma descargado (por defecto `certs/idira-signing.cer`; vale PEM o DER) |
+| `SAML_IDP_ISSUER` | IdP Entity ID / Issuer (opcional, recomendado) |
+
+Funciona en local: es el navegador el que lleva la respuesta de Idira a `localhost`.
+Se rechazan respuestas con firma inválida, con otro *audience*, vencidas o reenviadas.
+
 ## Estructura
 
 ```
@@ -36,10 +63,14 @@ idira-login/
 │   │   ├── mechanisms.js         # nombres legibles de los factores MFA
 │   │   └── openBrowser.js        # abre el navegador en local
 │   └── modules/
-│       ├── auth/                 # /auth/...  login + MFA con Idira
+│       ├── auth/                 # /auth/...  login + MFA con Idira (API)
 │       │   ├── auth.routes.js
 │       │   ├── auth.controller.js
 │       │   └── auth.service.js
+│       ├── saml/                 # /auth/saml/...  login SAML (ACS, metadata)
+│       │   ├── saml.routes.js
+│       │   ├── saml.controller.js
+│       │   └── saml.service.js
 │       └── home/                 # /  área privada
 │           ├── home.routes.js
 │           └── home.controller.js

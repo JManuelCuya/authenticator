@@ -97,3 +97,8 @@ td:first-child { font-weight: 600; width: 35%; }
   animation: spin 1s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+.divider { display: flex; align-items: center; gap: 12px; margin: 20px 0 4px; color: var(--muted); font-size: 0.85rem; }
+.divider::before, .divider::after { content: ""; flex: 1; border-top: 1px solid var(--border); }
+.hint { font-size: 0.8rem; text-align: center; margin: 6px 0 0; }
+code { font-size: 0.8rem; word-break: break-all; }

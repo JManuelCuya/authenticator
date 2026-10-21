@@ -16,6 +16,12 @@ const config = {
     tenantUrl: (env.IDIRA_TENANT_URL || '').replace(/\/$/, ''),
     tenantId: env.IDIRA_TENANT_ID || '',
   },
+  saml: {
+    // Datos que entrega Idira al crear la app SAML
+    idpSsoUrl: env.SAML_IDP_SSO_URL || '',
+    idpIssuer: env.SAML_IDP_ISSUER || '',
+    idpCertFile: env.SAML_IDP_CERT_FILE ? path.resolve(__dirname, '../..', env.SAML_IDP_CERT_FILE) : '',
+  },
   paths: {
     views: path.resolve(__dirname, '../../frontend/views'),
     public: path.resolve(__dirname, '../../frontend/public'),
@@ -23,6 +29,15 @@ const config = {
 };
 
 config.isHttps = config.baseUrl.startsWith('https://');
+
+// Datos que la app (SP) entrega a Idira
+config.saml.spEntityId = env.SAML_SP_ENTITY_ID || `${config.baseUrl}/auth/saml/metadata`;
+config.saml.acsUrl = `${config.baseUrl}/auth/saml/acs`;
+config.saml.metadataUrl = `${config.baseUrl}/auth/saml/metadata`;
+config.saml.missing = Object.entries({ SAML_IDP_SSO_URL: config.saml.idpSsoUrl, SAML_IDP_CERT_FILE: config.saml.idpCertFile })
+  .filter(([, v]) => !v)
+  .map(([k]) => k);
+config.saml.configured = config.saml.missing.length === 0;
 config.idira.missing = Object.entries({ IDIRA_TENANT_URL: config.idira.tenantUrl, IDIRA_TENANT_ID: config.idira.tenantId })
   .filter(([, v]) => !v)
   .map(([k]) => k);

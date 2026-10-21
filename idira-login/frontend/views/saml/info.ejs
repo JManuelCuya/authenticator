@@ -1,0 +1,32 @@
+<%- include('../partials/header', { title: 'Datos SAML' }) %>
+
+<h1>Datos SAML del Service Provider</h1>
+<p>Entrega estos datos al administrador de Idira para crear la app SAML:</p>
+
+<table>
+  <tr><td>ACS URL</td><td><code><%= saml.acsUrl %></code></td></tr>
+  <tr><td>Entity ID (SP)</td><td><code><%= saml.spEntityId %></code></td></tr>
+  <tr><td>Metadata</td><td><a href="/auth/saml/metadata"><%= saml.metadataUrl %></a></td></tr>
+  <tr><td>Binding</td><td>HTTP-POST</td></tr>
+  <tr><td>NameID</td><td>Correo o login name del usuario</td></tr>
+</table>
+
+<p>Y pide de vuelta a Idira:</p>
+<table>
+  <tr>
+    <td>IdP SSO URL</td>
+    <td><%= saml.idpSsoUrl ? saml.idpSsoUrl : 'Pendiente → SAML_IDP_SSO_URL' %></td>
+  </tr>
+  <tr>
+    <td>Certificado de firma</td>
+    <td><%= saml.idpCertFile ? 'Configurado' : 'Pendiente → SAML_IDP_CERT_FILE' %></td>
+  </tr>
+  <tr>
+    <td>IdP Entity ID</td>
+    <td><%= saml.idpIssuer ? saml.idpIssuer : 'Opcional → SAML_IDP_ISSUER' %></td>
+  </tr>
+</table>
+
+<a class="btn secondary" href="/auth/login">Volver al login</a>
+
+<%- include('../partials/footer') %>

@@ -15,4 +15,10 @@
   <button class="btn" type="submit">Ingresar</button>
 </form>
 
+<div class="divider"><span>o</span></div>
+
+<a class="btn secondary" href="/auth/saml/login">Ingresar con Idira (SAML)</a>
+<% if (!samlEnabled) { %><p class="hint">SAML aún no configurado.</p><% } %>
+<a class="link" href="/auth/saml/info">Datos SAML para el IdP (ACS URL, Entity ID)</a>
+
 <%- include('../partials/footer') %>

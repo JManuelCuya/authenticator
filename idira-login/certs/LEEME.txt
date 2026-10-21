@@ -1,0 +1,1 @@
+Coloca aquí el certificado de firma descargado de Idira (idira-signing.cer).
