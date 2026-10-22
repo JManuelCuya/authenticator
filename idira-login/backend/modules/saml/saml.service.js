@@ -24,6 +24,8 @@ function getSaml() {
     // Solo se aceptan respuestas a solicitudes iniciadas por esta app
     validateInResponseTo: 'always',
     identifierFormat: null,
+    // Sin exigir un AuthnContext concreto: Idira aplica su propia política (contraseña, MFA...)
+    disableRequestedAuthnContext: true,
     acceptedClockSkewMs: 5 * 60 * 1000,
   });
   return saml;
