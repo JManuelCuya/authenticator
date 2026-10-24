@@ -9,6 +9,18 @@
   <% }) %>
 </table>
 
+<% if (saml) { %>
+  <h2>Datos recibidos de Idira</h2>
+  <table>
+    <% Object.entries(saml).filter(([k, v]) => v && k !== 'atributos').forEach(([k, v]) => { %>
+      <tr><td><%= k %></td><td><%= v %></td></tr>
+    <% }) %>
+    <% Object.entries(saml.atributos).forEach(([k, v]) => { %>
+      <tr><td>Atributo: <%= k %></td><td><%= [].concat(v).join(', ') %></td></tr>
+    <% }) %>
+  </table>
+<% } %>
+
 <a class="btn secondary" href="/auth/logout">Cerrar sesión</a>
 
 <%- include('../partials/footer') %>

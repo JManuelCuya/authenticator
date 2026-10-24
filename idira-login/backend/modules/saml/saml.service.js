@@ -47,13 +47,48 @@ async function handleAcs(body) {
     return undefined;
   };
 
-  return {
+  const user = {
     usuario: profile.nameID,
     nombre: attr('DisplayName', 'displayName', 'name', 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'),
     correo: attr('Email', 'Email Address', 'email', 'mail', 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'),
     metodo: 'SAML',
     validado: new Date().toISOString(),
   };
+
+  // Lo que envió Idira tal cual, para depurar y para saber con qué atributos se puede cruzar al usuario
+  const detalle = {
+    issuer: profile.issuer,
+    nameID: profile.nameID,
+    nameIDFormat: profile.nameIDFormat,
+    sessionIndex: profile.sessionIndex,
+    inResponseTo: profile.inResponseTo,
+    atributos: profile.attributes || {},
+  };
+
+  return { user, detalle };
+}
+
+// Extrae datos de una respuesta SAML SIN validarla. Solo para registrar por qué falló una validación.
+function diagnose(body) {
+  try {
+    const xml = Buffer.from((body && body.SAMLResponse) || '', 'base64').toString('utf8');
+    if (!xml) return { samlResponse: 'vacía' };
+    const tag = (name) => (xml.match(new RegExp(`<(?:\\w+:)?${name}\\b[^>]*>([^<]*)</`)) || [])[1];
+    const attrOf = (el, name) => (xml.match(new RegExp(`<(?:\\w+:)?${el}\\b[^>]*\\b${name}="([^"]*)"`)) || [])[1];
+    return {
+      issuer: tag('Issuer'),
+      status: attrOf('StatusCode', 'Value'),
+      statusMessage: tag('StatusMessage'),
+      destination: attrOf('Response', 'Destination'),
+      inResponseTo: attrOf('Response', 'InResponseTo'),
+      audience: tag('Audience'),
+      nameID: tag('NameID'),
+      notOnOrAfter: attrOf('Conditions', 'NotOnOrAfter'),
+      firmada: /<(?:\w+:)?Signature\b/.test(xml),
+    };
+  } catch {
+    return { samlResponse: 'no se pudo leer' };
+  }
 }
 
 // Metadata del SP: se puede cargar directo en Idira en vez de copiar los datos a mano
@@ -63,4 +98,4 @@ function getMetadata() {
   return sp.generateServiceProviderMetadata(null, null);
 }
 
-module.exports = { getLoginUrl, handleAcs, getMetadata };
+module.exports = { getLoginUrl, handleAcs, diagnose, getMetadata };
