@@ -177,6 +177,49 @@ Después, **Implementar**.
 
 ---
 
+## Login con la base de la app (sin Idira)
+
+Además de SAML y del formulario contra Idira, el login tiene el botón **"Ingresar con la base de la app"**.
+Ese botón valida el usuario (o correo) y la contraseña directamente en la tabla `usuarios` de Postgres.
+Sirve para comparar el login propio con el login delegado a Idira.
+
+- La contraseña se guarda como **hash bcrypt** (extensión `pgcrypto` de Postgres) en la columna
+  `clave_hash`. Nunca se guarda en texto plano.
+- Todo se hace en la nube: las claves se asignan con SQL desde la consola de `idira-db`, sin scripts
+  ni tu PC.
+- Los usuarios **inactivos** o **sin clave asignada** no pueden entrar.
+- Tras **5 intentos fallidos** en 15 minutos (misma IP y usuario), se bloquea por 15 minutos.
+- Los eventos quedan en los logs como `[LOCAL]` (`login-ok`, `login-fallido`, `login-bloqueado`).
+
+### Preparar la tabla (una sola vez, en PgWeb de idira-db)
+```sql
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS clave_hash VARCHAR(255);
+```
+La app también lo intenta sola en el primer login, pero conviene hacerlo antes.
+
+### Asignar o cambiar la contraseña de un usuario (en PgWeb)
+```sql
+UPDATE usuarios SET clave_hash = crypt('ClaveNueva123', gen_salt('bf')) WHERE usuario = 'luis.arana';
+```
+Para crear un usuario nuevo ya con clave:
+```sql
+INSERT INTO usuarios (codigo, usuario, correo, nombre, rol, clave_hash)
+VALUES ('PE0005', 'ana.torres', 'ana.torres@tudominio.com', 'Ana Torres', 'consulta',
+        crypt('ClaveNueva123', gen_salt('bf')));
+```
+Para comprobar quién tiene clave (sin ver la clave):
+```sql
+SELECT codigo, usuario, activo, clave_hash IS NOT NULL AS tiene_clave FROM usuarios ORDER BY codigo;
+```
+
+### Prueba
+1. Asigna una clave a un usuario de la tabla con el `UPDATE` de arriba.
+2. En el login, escribe su usuario (o correo) y la clave → **Ingresar con la base de la app**.
+3. En el inicio debe aparecer `metodo: Base de datos propia`, y en *Usuario en la base de la app*, su código y rol.
+
+---
+
 ## Cómo la app cruza al usuario con su base
 
 Busca en la tabla `usuarios` de Postgres (sin distinguir mayúsculas), en este orden:

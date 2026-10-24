@@ -3,16 +3,21 @@
 <h1>Iniciar sesión</h1>
 
 <% if (error) { %><p class="error"><%= error %></p><% } %>
-<% if (!idira.configured) { %>
-  <p class="error">Idira no configurado. Faltan en .env: <%= idira.missing.join(', ') %></p>
+<% if (!idira.configured && !dbEnabled) { %>
+  <p class="error">Ni Idira ni la base de datos están configurados. Faltan en .env: <%= idira.missing.concat('DATABASE_URL').join(', ') %></p>
 <% } %>
 
-<form method="post" action="/auth/login">
-  <label for="u">Usuario</label>
+<form method="post" action="<%= idira.configured ? '/auth/login' : '/auth/local/login' %>">
+  <label for="u">Usuario o correo</label>
   <input id="u" name="username" autocomplete="username" value="<%= username %>" required autofocus>
   <label for="p">Contraseña</label>
   <input id="p" name="password" type="password" autocomplete="current-password" required>
-  <button class="btn" type="submit">Ingresar</button>
+  <% if (idira.configured) { %>
+    <button class="btn" type="submit" formaction="/auth/login">Ingresar con Idira</button>
+  <% } %>
+  <% if (dbEnabled) { %>
+    <button class="btn <%= idira.configured ? 'secondary' : '' %>" type="submit" formaction="/auth/local/login">Ingresar con la base de la app</button>
+  <% } %>
 </form>
 
 <div class="divider"><span>o</span></div>

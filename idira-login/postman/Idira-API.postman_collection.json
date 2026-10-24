@@ -1,0 +1,185 @@
+{
+  "info": {
+    "name": "Idira - Integración de usuarios",
+    "description": "Pruebas de la API de Idira para registrar usuarios y autorizarlos en la app SAML.\n\nOrden: 1) Token -> 2) Crear usuario -> 3) Agregar al rol. Opcional: SCIM.\n\nLas variables (tenant, credenciales, rol) van en el entorno 'Idira - Tenant'.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Obtener token (client credentials)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const data = pm.response.json();",
+              "pm.test('Devuelve access_token', () => pm.expect(data.access_token).to.be.a('string'));",
+              "if (data.access_token) {",
+              "  pm.environment.set('token', data.access_token);",
+              "  console.log('Token guardado. Vence en', data.expires_in, 's');",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "auth": {
+          "type": "basic",
+          "basic": [
+            { "key": "username", "value": "{{clientId}}", "type": "string" },
+            { "key": "password", "value": "{{clientSecret}}", "type": "string" }
+          ]
+        },
+        "header": [],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            { "key": "grant_type", "value": "client_credentials", "type": "text" },
+            { "key": "scope", "value": "{{scope}}", "type": "text" }
+          ]
+        },
+        "url": {
+          "raw": "{{tenantUrl}}/oauth2/token/{{appId}}",
+          "host": ["{{tenantUrl}}"],
+          "path": ["oauth2", "token", "{{appId}}"]
+        },
+        "description": "Token del usuario de servicio (OAuth2 client credentials). El script lo guarda en la variable {{token}}."
+      }
+    },
+    {
+      "name": "2. Crear usuario (API Idira)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const data = pm.response.json();",
+              "pm.test('success = true', () => pm.expect(data.success, data.Message).to.eql(true));",
+              "if (data.success) {",
+              "  pm.environment.set('userUuid', data.Result);",
+              "  console.log('Usuario creado. UUID:', data.Result);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"Name\": \"{{testLogin}}\",\n  \"Mail\": \"{{testMail}}\",\n  \"DisplayName\": \"{{testName}}\",\n  \"Password\": \"{{testPassword}}\",\n  \"ConfirmPassword\": \"{{testPassword}}\",\n  \"ForcePasswordChangeNext\": true,\n  \"PasswordNeverExpire\": false,\n  \"InEverybodyRole\": true,\n  \"InSysAdminRole\": false,\n  \"SendEmailInvite\": false,\n  \"SendSmsInvite\": false\n}"
+        },
+        "url": {
+          "raw": "{{tenantUrl}}/CDirectoryService/CreateUser",
+          "host": ["{{tenantUrl}}"],
+          "path": ["CDirectoryService", "CreateUser"]
+        },
+        "description": "Crea el usuario en el Cloud Directory. Devuelve su UUID en Result (se guarda en {{userUuid}})."
+      }
+    },
+    {
+      "name": "3. Agregar usuario al rol de la app SAML",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const data = pm.response.json();",
+              "pm.test('success = true', () => pm.expect(data.success, data.Message).to.eql(true));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"Name\": \"{{roleId}}\",\n  \"Users\": {\n    \"Add\": [\"{{userUuid}}\"]\n  }\n}"
+        },
+        "url": {
+          "raw": "{{tenantUrl}}/Roles/UpdateRole",
+          "host": ["{{tenantUrl}}"],
+          "path": ["Roles", "UpdateRole"]
+        },
+        "description": "Agrega el usuario al rol asignado a la app SAML, para que pueda entrar. (Formato no verificado contra el tenant.)"
+      }
+    },
+    {
+      "name": "SCIM (alternativa)",
+      "item": [
+        {
+          "name": "SCIM - Buscar usuario",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "header": [],
+            "url": {
+              "raw": "{{tenantUrl}}/scim/users?filter=userName eq \"{{testLogin}}\"",
+              "host": ["{{tenantUrl}}"],
+              "path": ["scim", "users"],
+              "query": [{ "key": "filter", "value": "userName eq \"{{testLogin}}\"" }]
+            },
+            "description": "Busca por userName (operadores: eq, sw, co, ew)."
+          }
+        },
+        {
+          "name": "SCIM - Crear usuario",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "pm.test('Devuelve id', () => pm.expect(data.id).to.be.a('string'));",
+                  "if (data.id) { pm.environment.set('scimUserId', data.id); console.log('SCIM id:', data.id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schemas\": [\"urn:ietf:params:scim:schemas:core:2.0:User\"],\n  \"userName\": \"{{testLogin}}\",\n  \"password\": \"{{testPassword}}\",\n  \"displayName\": \"{{testName}}\",\n  \"emails\": [{ \"value\": \"{{testMail}}\", \"primary\": true }],\n  \"active\": true\n}"
+            },
+            "url": {
+              "raw": "{{tenantUrl}}/scim/v2/Users",
+              "host": ["{{tenantUrl}}"],
+              "path": ["scim", "v2", "Users"]
+            },
+            "description": "Requiere un scope con scim* en Allowed REST APIs."
+          }
+        },
+        {
+          "name": "SCIM - Desactivar usuario (PATCH)",
+          "request": {
+            "method": "PATCH",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schemas\": [\"urn:ietf:params:scim:api:messages:2.0:PatchOp\"],\n  \"Operations\": [\n    { \"op\": \"replace\", \"path\": \"active\", \"value\": false }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{tenantUrl}}/scim/v2/Users/{{scimUserId}}",
+              "host": ["{{tenantUrl}}"],
+              "path": ["scim", "v2", "Users", "{{scimUserId}}"]
+            },
+            "description": "Formato estándar SCIM 2.0 (no verificado contra el tenant)."
+          }
+        }
+      ]
+    }
+  ]
+}

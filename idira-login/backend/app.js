@@ -6,6 +6,7 @@ const viewLocals = require('./middlewares/viewLocals');
 const { notFound, errorHandler } = require('./middlewares/errorHandler');
 const authRoutes = require('./modules/auth/auth.routes');
 const samlRoutes = require('./modules/saml/saml.routes');
+const localAuthRoutes = require('./modules/local-auth/local-auth.routes');
 const migrationRoutes = require('./modules/migration/migration.routes');
 const homeRoutes = require('./modules/home/home.routes');
 
@@ -21,6 +22,7 @@ app.use(session);
 app.use(viewLocals);
 
 app.use('/auth/saml', samlRoutes);
+app.use('/auth/local', localAuthRoutes);
 app.use('/auth', authRoutes);
 app.use('/admin/migracion', migrationRoutes);
 app.use('/', homeRoutes);
