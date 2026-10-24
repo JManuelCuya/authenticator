@@ -50,7 +50,7 @@ async function handleAcs(body) {
   return {
     usuario: profile.nameID,
     nombre: attr('DisplayName', 'displayName', 'name', 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'),
-    correo: attr('Email', 'email', 'mail', 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'),
+    correo: attr('Email', 'Email Address', 'email', 'mail', 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'),
     metodo: 'SAML',
     validado: new Date().toISOString(),
   };
