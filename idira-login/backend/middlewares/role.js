@@ -2,7 +2,7 @@
 // Login con la base propia: se fija al entrar. Login con Idira (SAML o API): se busca aquí la
 // primera vez, cruzando la identidad de Idira con la tabla usuarios.
 const usersService = require('../modules/users/users.service');
-const { canAccess, SCREENS } = require('../modules/screens/screens.permissions');
+const permissionsService = require('../modules/permissions/permissions.service');
 
 async function loadRole(req, res, next) {
   if (req.session.user && req.session.rol === undefined) {
@@ -16,10 +16,11 @@ async function loadRole(req, res, next) {
   next();
 }
 
-// Solo si el rol del usuario puede ver la pantalla indicada
-const requireScreen = (key) => (req, res, next) => {
-  if (canAccess(req.session.rol, key)) return next();
-  res.status(403).render('screens/forbidden', { pantalla: SCREENS[key], rol: req.session.rol || null });
+// Solo si el rol del usuario tiene el permiso (pantalla) indicado en la tabla rol_permisos
+const requirePermission = (codigo) => async (req, res, next) => {
+  if (await permissionsService.can(req.session.rol, codigo)) return next();
+  const permiso = (await permissionsService.getPermission(codigo)) || { nombre: codigo };
+  res.status(403).render('screens/forbidden', { permiso, rol: req.session.rol || null });
 };
 
-module.exports = { loadRole, requireScreen };
+module.exports = { loadRole, requirePermission };

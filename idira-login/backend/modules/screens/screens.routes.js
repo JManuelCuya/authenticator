@@ -1,13 +1,15 @@
-// Rutas del módulo screens: pantallas protegidas por rol
+// Rutas del módulo screens: cada pantalla exige su permiso (tabla rol_permisos)
 const { Router } = require('express');
 const controller = require('./screens.controller');
 const asyncHandler = require('../../helpers/asyncHandler');
 const { requireAuth } = require('../../middlewares/auth.guards');
-const { loadRole, requireScreen } = require('../../middlewares/role');
+const { loadRole, requirePermission } = require('../../middlewares/role');
 
 const router = Router();
+const guard = (permiso) => [requireAuth, asyncHandler(loadRole), asyncHandler(requirePermission(permiso))];
 
-router.get('/pantalla-a', requireAuth, asyncHandler(loadRole), requireScreen('a'), controller.screenA);
-router.get('/pantalla-b', requireAuth, asyncHandler(loadRole), requireScreen('b'), asyncHandler(controller.screenB));
+router.get('/listado', ...guard('listado'), controller.listado);
+router.get('/inventario', ...guard('inventario'), controller.inventario);
+router.get('/panel', ...guard('panel'), asyncHandler(controller.panel));
 
 module.exports = router;

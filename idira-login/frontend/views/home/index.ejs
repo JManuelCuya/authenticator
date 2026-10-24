@@ -7,7 +7,7 @@
 <% if (pantallas.length) { %>
   <p class="hint">Rol en la app: <code><%= rol %></code></p>
   <% pantallas.forEach((p) => { %>
-    <a class="btn" href="<%= p.ruta %>"><%= p.titulo %></a>
+    <a class="btn" href="<%= p.ruta %>"><%= p.nombre %></a>
   <% }) %>
 <% } else { %>
   <p class="hint">Tu usuario no tiene un rol con pantallas asignadas en la base de la app.</p>

@@ -220,42 +220,64 @@ SELECT codigo, usuario, activo, clave_hash IS NOT NULL AS tiene_clave FROM usuar
 
 ---
 
-## Caso 1: dos usuarios con acceso por rol
+## Caso 1: dos usuarios con acceso por rol (roles y permisos en la base)
 
-Dos usuarios de la base propia, cada uno con su contraseña, que ven pantallas distintas según su rol:
+Los roles y lo que puede ver cada uno viven en **tablas de Postgres**. Se cambian con SQL en PgWeb,
+**sin tocar el código ni reimplementar**, y el cambio aplica en la siguiente petición.
 
-| Rol (columna `rol`) | Pantallas | Ejemplo |
-|---|---|---|
-| `consulta` | **Pantalla A** · Consulta | usuario de consulta |
-| `admin` | **Pantalla A** y **Pantalla B** · Administración | usuario administrador |
+```
+roles             permisos (pantallas)               rol_permisos
+codigo   nombre   codigo      nombre      ruta       rol       permiso
+admin    Admin.   listado     Listado     /listado   admin     listado
+consulta Consulta inventario  Inventario  /inventario admin    inventario
+                  panel       Panel       /panel     admin     panel
+                                                     consulta  listado
+```
 
-Los permisos están en `backend/modules/screens/screens.permissions.js`. Si un usuario abre una pantalla
-que su rol no permite, recibe **"Sin acceso"** (403). El inicio solo muestra los botones de sus pantallas.
-El rol se toma de la tabla `usuarios`. Por eso también funciona si el usuario entra con Idira (SAML o
-API), siempre que su correo o usuario coincida con la tabla.
+- La app **crea las tablas sola** al arrancar y, la primera vez, carga los valores por defecto:
+  **admin** → listado, inventario, panel; **consulta** → listado.
+- `usuarios.rol` guarda el código del rol (`admin`, `consulta`).
+- El **inicio** muestra solo los botones de los permisos del rol. Abrir una pantalla sin permiso → **"Sin acceso"** (403).
+- **Panel** muestra la matriz de roles y permisos y la lista de usuarios.
+- El rol se toma de la tabla `usuarios`. También funciona si el usuario entra con Idira (SAML o API),
+  siempre que su correo o usuario coincida con la tabla.
 
-### SQL (PgWeb de idira-db)
+### SQL: los dos usuarios del caso (PgWeb de idira-db)
 ```sql
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS clave_hash VARCHAR(255);
 
--- Administrador (ya existe): rol admin + clave
+-- Administrador (ya existe)
 UPDATE usuarios SET rol = 'admin', clave_hash = crypt('ClaveAdmin123', gen_salt('bf'))
  WHERE usuario = 'luis.arana';
 
--- Consulta (nuevo): rol consulta + clave
+-- Consulta (nuevo)
 INSERT INTO usuarios (codigo, usuario, correo, nombre, rol, clave_hash)
 VALUES ('PE0002', 'usuario.consulta', 'usuario.consulta@tudominio.com', 'Usuario Consulta', 'consulta',
         crypt('ClaveConsulta123', gen_salt('bf')));
-
--- Verificar
-SELECT codigo, usuario, rol, activo, clave_hash IS NOT NULL AS tiene_clave FROM usuarios ORDER BY codigo;
 ```
 
+### SQL: administrar roles y permisos
+```sql
+-- Ver quién ve qué
+SELECT rp.rol, p.nombre, p.ruta FROM rol_permisos rp JOIN permisos p ON p.codigo = rp.permiso ORDER BY rp.rol, p.orden;
+
+-- Dar o quitar un permiso a un rol
+INSERT INTO rol_permisos (rol, permiso) VALUES ('consulta', 'inventario');
+DELETE FROM rol_permisos WHERE rol = 'consulta' AND permiso = 'inventario';
+
+-- Crear un rol nuevo con sus permisos y asignarlo a un usuario
+INSERT INTO roles (codigo, nombre) VALUES ('almacen', 'Almacén');
+INSERT INTO rol_permisos (rol, permiso) VALUES ('almacen', 'listado'), ('almacen', 'inventario');
+UPDATE usuarios SET rol = 'almacen' WHERE usuario = 'usuario.consulta';
+```
+> Una **pantalla nueva** (un permiso con otra ruta) sí necesita código: su ruta, su vista y
+> `requirePermission('codigo')`. Roles y asignaciones nuevas, en cambio, son solo SQL.
+
 ### Prueba
-1. Entra con el **administrador** → **Ingresar con la base de la app** → ve los botones **Pantalla A** y **Pantalla B**, y ambas abren.
-2. Cierra sesión y entra con el usuario de **consulta** → ve solo **Pantalla A**.
-3. Con el usuario de consulta, abre `/pantalla-b` directo en el navegador → **Sin acceso**.
+1. **Administrador** → **Ingresar con la base de la app** → ve **Listado**, **Inventario** y **Panel**, y las tres abren.
+2. **Consulta** → ve solo **Listado**. Si abre `/inventario` o `/panel` directo → **Sin acceso**.
+3. Con el `INSERT` de arriba, dale `inventario` a `consulta` y recarga el inicio: aparece el botón sin volver a iniciar sesión.
 
 ---
 
