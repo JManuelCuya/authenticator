@@ -1,8 +1,8 @@
 // Tablas de roles y permisos de la app. Se crean solas al arrancar (si no existen) y la primera vez
 // se cargan los valores por defecto. Después se administran con SQL (PgWeb) sin tocar el código.
 //
-//   roles         (codigo, nombre)                  admin, consulta
-//   permisos      (codigo, nombre, ruta, orden)     listado, inventario, panel  (= pantallas)
+//   roles         (codigo, nombre)                  admin, docente, alumno
+//   permisos      (codigo, nombre, ruta, orden)     panel_alumno, panel_docente  (= pantallas)
 //   rol_permisos  (rol, permiso)                    qué pantallas ve cada rol
 //
 // usuarios.rol guarda el código del rol (roles.codigo).
@@ -29,14 +29,15 @@ const SCHEMA = [
 // Valores por defecto: solo se cargan si la tabla roles está vacía (primera vez), para no
 // deshacer los cambios que se hagan después con SQL
 const SEED = [
-  `INSERT INTO roles (codigo, nombre) VALUES ('admin', 'Administrador'), ('consulta', 'Consulta')`,
+  `INSERT INTO roles (codigo, nombre) VALUES
+     ('admin', 'Administrador'), ('docente', 'Docente'), ('alumno', 'Alumno')`,
   `INSERT INTO permisos (codigo, nombre, ruta, orden) VALUES
-     ('listado', 'Listado', '/listado', 1),
-     ('inventario', 'Inventario', '/inventario', 2),
-     ('panel', 'Panel', '/panel', 3)`,
+     ('panel_alumno', 'Panel alumno', '/panel-alumno', 1),
+     ('panel_docente', 'Panel docente', '/panel-docente', 2)`,
   `INSERT INTO rol_permisos (rol, permiso) VALUES
-     ('admin', 'listado'), ('admin', 'inventario'), ('admin', 'panel'),
-     ('consulta', 'listado')`,
+     ('admin', 'panel_alumno'), ('admin', 'panel_docente'),
+     ('docente', 'panel_docente'),
+     ('alumno', 'panel_alumno')`,
 ];
 
 let ready = null;
@@ -50,7 +51,7 @@ function ensureSchema() {
       const { rows } = await pool.query('SELECT COUNT(*)::int AS n FROM roles');
       if (rows[0].n === 0) {
         for (const sql of SEED) await pool.query(sql);
-        console.log('Roles y permisos por defecto cargados (admin: listado, inventario, panel; consulta: listado)');
+        console.log('Roles y permisos por defecto cargados (admin: ambos paneles; docente: panel_docente; alumno: panel_alumno)');
       }
       return true;
     })().catch((err) => {

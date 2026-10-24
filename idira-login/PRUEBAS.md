@@ -220,64 +220,50 @@ SELECT codigo, usuario, activo, clave_hash IS NOT NULL AS tiene_clave FROM usuar
 
 ---
 
-## Caso 1: dos usuarios con acceso por rol (roles y permisos en la base)
+## Caso 1: acceso por rol (roles y permisos en la base)
 
 Los roles y lo que puede ver cada uno viven en **tablas de Postgres**. Se cambian con SQL en PgWeb,
 **sin tocar el código ni reimplementar**, y el cambio aplica en la siguiente petición.
 
-```
-roles             permisos (pantallas)               rol_permisos
-codigo   nombre   codigo      nombre      ruta       rol       permiso
-admin    Admin.   listado     Listado     /listado   admin     listado
-consulta Consulta inventario  Inventario  /inventario admin    inventario
-                  panel       Panel       /panel     admin     panel
-                                                     consulta  listado
-```
+| Rol | Pantallas (permisos) |
+|---|---|
+| `admin` | **Panel alumno** (`panel_alumno`) y **Panel docente** (`panel_docente`) |
+| `docente` | **Panel docente** |
+| `alumno` | **Panel alumno** |
 
-- La app **crea las tablas sola** al arrancar y, la primera vez, carga los valores por defecto:
-  **admin** → listado, inventario, panel; **consulta** → listado.
-- `usuarios.rol` guarda el código del rol (`admin`, `consulta`).
+- Tablas: `roles`, `permisos` (cada permiso es una pantalla con su ruta) y `rol_permisos` (qué ve cada rol).
+- `usuarios.rol` guarda el código del rol.
 - El **inicio** muestra solo los botones de los permisos del rol. Abrir una pantalla sin permiso → **"Sin acceso"** (403).
-- **Panel** muestra la matriz de roles y permisos y la lista de usuarios.
+- La app crea las tablas sola al arrancar y, en una base vacía, carga estos valores por defecto.
 - El rol se toma de la tabla `usuarios`. También funciona si el usuario entra con Idira (SAML o API),
   siempre que su correo o usuario coincida con la tabla.
 
-### SQL: los dos usuarios del caso (PgWeb de idira-db)
+### Script SQL: [`sql/roles-permisos.sql`](sql/roles-permisos.sql)
+Pégalo completo en la consola SQL de `idira-db` (PgWeb). El script:
+1. Crea las tablas si no existen.
+2. Quita los permisos de ejemplo anteriores (`listado`, `inventario`, `panel`) y el rol `consulta`.
+3. Carga los roles `admin`, `docente` y `alumno`, los permisos `panel_alumno` y `panel_docente`, y sus asignaciones.
+4. Deja tres usuarios de prueba con clave: `luis.arana` (admin), `docente.prueba` y `alumno.prueba`. **Cambia las claves antes de ejecutarlo.**
+5. Muestra al final cómo quedó todo.
+
+Se puede ejecutar más de una vez: siempre deja el mismo resultado.
+
+### SQL para administrar después
 ```sql
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
-ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS clave_hash VARCHAR(255);
-
--- Administrador (ya existe)
-UPDATE usuarios SET rol = 'admin', clave_hash = crypt('ClaveAdmin123', gen_salt('bf'))
- WHERE usuario = 'luis.arana';
-
--- Consulta (nuevo)
-INSERT INTO usuarios (codigo, usuario, correo, nombre, rol, clave_hash)
-VALUES ('PE0002', 'usuario.consulta', 'usuario.consulta@tudominio.com', 'Usuario Consulta', 'consulta',
-        crypt('ClaveConsulta123', gen_salt('bf')));
-```
-
-### SQL: administrar roles y permisos
-```sql
--- Ver quién ve qué
-SELECT rp.rol, p.nombre, p.ruta FROM rol_permisos rp JOIN permisos p ON p.codigo = rp.permiso ORDER BY rp.rol, p.orden;
-
 -- Dar o quitar un permiso a un rol
-INSERT INTO rol_permisos (rol, permiso) VALUES ('consulta', 'inventario');
-DELETE FROM rol_permisos WHERE rol = 'consulta' AND permiso = 'inventario';
+INSERT INTO rol_permisos (rol, permiso) VALUES ('docente', 'panel_alumno');
+DELETE FROM rol_permisos WHERE rol = 'docente' AND permiso = 'panel_alumno';
 
--- Crear un rol nuevo con sus permisos y asignarlo a un usuario
-INSERT INTO roles (codigo, nombre) VALUES ('almacen', 'Almacén');
-INSERT INTO rol_permisos (rol, permiso) VALUES ('almacen', 'listado'), ('almacen', 'inventario');
-UPDATE usuarios SET rol = 'almacen' WHERE usuario = 'usuario.consulta';
+-- Cambiar el rol de un usuario
+UPDATE usuarios SET rol = 'docente' WHERE usuario = 'alumno.prueba';
 ```
-> Una **pantalla nueva** (un permiso con otra ruta) sí necesita código: su ruta, su vista y
+> Una **pantalla nueva** (otro permiso con otra ruta) sí necesita código: su ruta, su vista y
 > `requirePermission('codigo')`. Roles y asignaciones nuevas, en cambio, son solo SQL.
 
 ### Prueba
-1. **Administrador** → **Ingresar con la base de la app** → ve **Listado**, **Inventario** y **Panel**, y las tres abren.
-2. **Consulta** → ve solo **Listado**. Si abre `/inventario` o `/panel` directo → **Sin acceso**.
-3. Con el `INSERT` de arriba, dale `inventario` a `consulta` y recarga el inicio: aparece el botón sin volver a iniciar sesión.
+1. **admin** → **Ingresar con la base de la app** → ve **Panel alumno** y **Panel docente**, y los dos abren.
+2. **docente.prueba** → ve solo **Panel docente**; `/panel-alumno` → **Sin acceso**.
+3. **alumno.prueba** → ve solo **Panel alumno**; `/panel-docente` → **Sin acceso**.
 
 ---
 

@@ -1,0 +1,17 @@
+<%- include('../partials/header', { title: 'Panel alumno' }) %>
+
+<h1>Panel alumno</h1>
+<p>Permiso <code>panel_alumno</code> · tu rol: <code><%= rol %></code></p>
+
+<h2>Mis cursos</h2>
+<table>
+  <tr><td>curso</td><td>docente</td><td>nota</td></tr>
+  <% cursos.forEach((c) => { %>
+    <tr><td><%= c.curso %></td><td><%= c.docente %></td><td><%= c.nota %></td></tr>
+  <% }) %>
+</table>
+<p class="hint">Datos de ejemplo.</p>
+
+<a class="btn secondary" href="/">Volver al inicio</a>
+
+<%- include('../partials/footer') %>

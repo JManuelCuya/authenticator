@@ -33,20 +33,4 @@ async function getPermission(codigo) {
   return rows[0] || null;
 }
 
-// Matriz completa para el panel: roles con sus permisos y la lista de permisos
-async function matrix() {
-  const pool = getPool();
-  await ensureSchema();
-  const [roles, permisos, asignaciones] = await Promise.all([
-    pool.query('SELECT codigo, nombre FROM roles ORDER BY codigo'),
-    pool.query('SELECT codigo, nombre, ruta FROM permisos ORDER BY orden, nombre'),
-    pool.query('SELECT rol, permiso FROM rol_permisos'),
-  ]);
-  const tiene = new Set(asignaciones.rows.map((a) => `${a.rol}|${a.permiso}`));
-  return {
-    permisos: permisos.rows,
-    roles: roles.rows.map((r) => ({ ...r, permisos: permisos.rows.map((p) => tiene.has(`${r.codigo}|${p.codigo}`)) })),
-  };
-}
-
-module.exports = { permissionsOf, can, getPermission, matrix };
+module.exports = { permissionsOf, can, getPermission };

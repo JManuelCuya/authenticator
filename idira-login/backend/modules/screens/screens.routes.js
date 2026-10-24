@@ -8,8 +8,7 @@ const { loadRole, requirePermission } = require('../../middlewares/role');
 const router = Router();
 const guard = (permiso) => [requireAuth, asyncHandler(loadRole), asyncHandler(requirePermission(permiso))];
 
-router.get('/listado', ...guard('listado'), controller.listado);
-router.get('/inventario', ...guard('inventario'), controller.inventario);
-router.get('/panel', ...guard('panel'), asyncHandler(controller.panel));
+router.get('/panel-alumno', ...guard('panel_alumno'), controller.panelAlumno);
+router.get('/panel-docente', ...guard('panel_docente'), controller.panelDocente);
 
 module.exports = router;
