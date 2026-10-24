@@ -11,6 +11,8 @@ const config = {
   host: env.HOST || '127.0.0.1',
   baseUrl: (env.BASE_URL || '').replace(/\/$/, ''),
   sessionSecret: env.SESSION_SECRET,
+  // Base de datos propia de la app (Postgres, tabla "usuarios") para cruzar con Idira
+  databaseUrl: env.DATABASE_URL || '',
   openBrowser: !env.NO_OPEN,
   idira: {
     tenantUrl: (env.IDIRA_TENANT_URL || '').replace(/\/$/, ''),

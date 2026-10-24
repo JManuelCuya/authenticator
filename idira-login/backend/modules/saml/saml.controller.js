@@ -1,5 +1,6 @@
 const config = require('../../config');
 const samlService = require('./saml.service');
+const usersService = require('../users/users.service');
 
 // Una línea JSON por evento SAML: se ve y se filtra fácil en los logs de Easypanel
 function log(req, evento, datos) {
@@ -23,7 +24,15 @@ async function login(req, res) {
 async function acs(req, res, next) {
   try {
     const { user, detalle } = await samlService.handleAcs(req.body);
-    log(req, 'login-ok', { usuario: user.usuario, correo: user.correo, ...detalle });
+    const interno = await usersService.match(user);
+    log(req, 'login-ok', {
+      usuario: user.usuario,
+      correo: user.correo,
+      interno: !interno
+        ? 'no registrado en la base de la app'
+        : interno.error || `${interno.usuario.codigo} (${interno.criterio})`,
+      ...detalle,
+    });
     req.session.regenerate((err) => {
       if (err) return next(err);
       req.session.user = user;

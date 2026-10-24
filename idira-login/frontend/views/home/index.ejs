@@ -9,6 +9,21 @@
   <% }) %>
 </table>
 
+<h2>Usuario en la base de la app</h2>
+<% if (interno && interno.error) { %>
+  <p class="error"><%= interno.error %></p>
+<% } else if (interno) { %>
+  <table>
+    <tr><td>código</td><td><%= interno.usuario.codigo %></td></tr>
+    <tr><td>nombre</td><td><%= interno.usuario.nombre %></td></tr>
+    <tr><td>rol</td><td><%= interno.usuario.rol %></td></tr>
+    <tr><td>activo</td><td><%= interno.usuario.activo ? 'sí' : 'no' %></td></tr>
+    <tr><td>cruzado por</td><td><%= interno.criterio %></td></tr>
+  </table>
+<% } else { %>
+  <p class="hint">No está registrado en la base de datos propia de la app. Idira lo autenticó, pero la app no tiene datos internos de este usuario.</p>
+<% } %>
+
 <% if (saml) { %>
   <h2>Datos recibidos de Idira</h2>
   <table>

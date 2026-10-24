@@ -16,6 +16,8 @@ Navegador ──usuario+contraseña──▶ Tu servidor ──StartAuthenticati
 Los usuarios y contraseñas viven **solo en Idira** (o en el AD conectado a Idira). La app no
 guarda credenciales.
 
+> Guía de pruebas por escenario (Active Directory, Google Workspace, base de datos propia): [PRUEBAS.md](PRUEBAS.md)
+
 ## Login por SAML (Idira como IdP)
 
 Además del formulario (API), la app tiene un botón **"Ingresar con Idira (SAML)"**. Ahí la app
