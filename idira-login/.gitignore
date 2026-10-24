@@ -1,2 +1,7 @@
 node_modules/
 .env
+
+# Resultados y CSV reales de la carga de usuarios (traen datos personales y claves)
+scripts/salida/
+scripts/*.csv
+!scripts/usuarios.ejemplo.csv

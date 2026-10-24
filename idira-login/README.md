@@ -115,6 +115,31 @@ Antes completa en `.env`:
 > Confirma su vigencia en docs.cyberark.com (sección *Identity APIs → Authentication*) tras el
 > rebranding.
 
+## Cargar usuarios en Idira desde un CSV
+
+`scripts/crear-usuarios.js` crea en Idira los usuarios de un CSV y los agrega al rol asignado a
+la app SAML, para poder usarlos en el login.
+
+1. En Idira (una sola vez):
+   - Un **usuario de servicio** con permisos de administración de usuarios, marcado como
+     *Is OAuth confidential client*.
+   - Una app web **OAuth2 Client** (Application ID, autenticación *Client Credentials*) con un
+     scope que permita `CDirectoryService/.*` y `Roles/.*`, asignada a ese usuario de servicio.
+2. Completa en `.env` las variables `IDIRA_API_*` e `IDIRA_LOGIN_SUFFIX` (ver `.env.example`).
+3. Copia `scripts/usuarios.ejemplo.csv` como `scripts/usuarios.csv` y completa los usuarios.
+   La columna `clave` es opcional: si va vacía se genera una temporal y Idira pide cambiarla
+   en el primer ingreso.
+4. Prueba sin crear nada y luego ejecútalo:
+
+```bash
+node scripts/crear-usuarios.js scripts/usuarios.csv --dry-run
+node scripts/crear-usuarios.js scripts/usuarios.csv
+```
+
+El detalle (UUID, errores y claves temporales) queda en `scripts/salida/`. Esa carpeta y los CSV
+reales no se suben a git. Endpoints usados: `POST /oauth2/token/{appId}`,
+`POST /CDirectoryService/CreateUser` y `POST /Roles/UpdateRole`.
+
 ## Subir al VPS con Docker (recomendado)
 
 ```bash
