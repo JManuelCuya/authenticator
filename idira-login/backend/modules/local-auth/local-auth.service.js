@@ -41,6 +41,7 @@ async function login(identificador, password) {
   if (!u.activo) return { error: 'El usuario está inactivo en la base de la app.' };
 
   return {
+    rol: u.rol,
     user: {
       usuario: u.usuario,
       nombre: u.nombre,

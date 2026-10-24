@@ -1,0 +1,8 @@
+<%- include('../partials/header', { title: 'Sin acceso' }) %>
+
+<h1>Sin acceso</h1>
+<p>Tu rol <code><%= rol || 'sin rol' %></code> no tiene permiso para ver <b><%= pantalla.titulo %></b>.</p>
+
+<a class="btn secondary" href="/">Volver al inicio</a>
+
+<%- include('../partials/footer') %>

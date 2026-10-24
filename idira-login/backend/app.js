@@ -8,6 +8,7 @@ const authRoutes = require('./modules/auth/auth.routes');
 const samlRoutes = require('./modules/saml/saml.routes');
 const localAuthRoutes = require('./modules/local-auth/local-auth.routes');
 const migrationRoutes = require('./modules/migration/migration.routes');
+const screensRoutes = require('./modules/screens/screens.routes');
 const homeRoutes = require('./modules/home/home.routes');
 
 const app = express();
@@ -25,6 +26,7 @@ app.use('/auth/saml', samlRoutes);
 app.use('/auth/local', localAuthRoutes);
 app.use('/auth', authRoutes);
 app.use('/admin/migracion', migrationRoutes);
+app.use('/', screensRoutes);
 app.use('/', homeRoutes);
 
 app.use(notFound);

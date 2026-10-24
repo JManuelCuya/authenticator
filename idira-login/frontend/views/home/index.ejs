@@ -1,7 +1,17 @@
 <%- include('../partials/header', { title: 'Inicio' }) %>
 
 <h1>Bienvenido, <%= user.nombre || user.usuario %></h1>
-<p>Tus credenciales fueron validadas por Idira.</p>
+<p>Ingresaste con: <b><%= user.metodo === 'Base de datos propia' ? 'la base de datos de la app' : 'Idira' %></b>.</p>
+
+<h2>Tus pantallas</h2>
+<% if (pantallas.length) { %>
+  <p class="hint">Rol en la app: <code><%= rol %></code></p>
+  <% pantallas.forEach((p) => { %>
+    <a class="btn" href="<%= p.ruta %>"><%= p.titulo %></a>
+  <% }) %>
+<% } else { %>
+  <p class="hint">Tu usuario no tiene un rol con pantallas asignadas en la base de la app.</p>
+<% } %>
 
 <table>
   <% Object.entries(user).filter(([, v]) => v).forEach(([k, v]) => { %>

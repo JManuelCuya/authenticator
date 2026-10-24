@@ -220,6 +220,45 @@ SELECT codigo, usuario, activo, clave_hash IS NOT NULL AS tiene_clave FROM usuar
 
 ---
 
+## Caso 1: dos usuarios con acceso por rol
+
+Dos usuarios de la base propia, cada uno con su contraseña, que ven pantallas distintas según su rol:
+
+| Rol (columna `rol`) | Pantallas | Ejemplo |
+|---|---|---|
+| `consulta` | **Pantalla A** · Consulta | usuario de consulta |
+| `admin` | **Pantalla A** y **Pantalla B** · Administración | usuario administrador |
+
+Los permisos están en `backend/modules/screens/screens.permissions.js`. Si un usuario abre una pantalla
+que su rol no permite, recibe **"Sin acceso"** (403). El inicio solo muestra los botones de sus pantallas.
+El rol se toma de la tabla `usuarios`. Por eso también funciona si el usuario entra con Idira (SAML o
+API), siempre que su correo o usuario coincida con la tabla.
+
+### SQL (PgWeb de idira-db)
+```sql
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS clave_hash VARCHAR(255);
+
+-- Administrador (ya existe): rol admin + clave
+UPDATE usuarios SET rol = 'admin', clave_hash = crypt('ClaveAdmin123', gen_salt('bf'))
+ WHERE usuario = 'luis.arana';
+
+-- Consulta (nuevo): rol consulta + clave
+INSERT INTO usuarios (codigo, usuario, correo, nombre, rol, clave_hash)
+VALUES ('PE0002', 'usuario.consulta', 'usuario.consulta@tudominio.com', 'Usuario Consulta', 'consulta',
+        crypt('ClaveConsulta123', gen_salt('bf')));
+
+-- Verificar
+SELECT codigo, usuario, rol, activo, clave_hash IS NOT NULL AS tiene_clave FROM usuarios ORDER BY codigo;
+```
+
+### Prueba
+1. Entra con el **administrador** → **Ingresar con la base de la app** → ve los botones **Pantalla A** y **Pantalla B**, y ambas abren.
+2. Cierra sesión y entra con el usuario de **consulta** → ve solo **Pantalla A**.
+3. Con el usuario de consulta, abre `/pantalla-b` directo en el navegador → **Sin acceso**.
+
+---
+
 ## Cómo la app cruza al usuario con su base
 
 Busca en la tabla `usuarios` de Postgres (sin distinguir mayúsculas), en este orden:

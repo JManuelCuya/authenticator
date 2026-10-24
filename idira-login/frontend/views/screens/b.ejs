@@ -1,0 +1,26 @@
+<%- include('../partials/header', { title: pantalla.titulo }) %>
+
+<h1><%= pantalla.titulo %></h1>
+<p>Solo la ve el rol <code>admin</code>. Usuarios registrados en la base de la app:</p>
+
+<% if (error) { %><p class="error"><%= error %></p><% } %>
+
+<% if (usuarios.length) { %>
+  <table>
+    <tr><td>código</td><td>usuario</td><td>rol</td><td>activo</td></tr>
+    <% usuarios.forEach((u) => { %>
+      <tr>
+        <td><%= u.codigo %></td>
+        <td><%= u.usuario %><br><span class="hint"><%= u.nombre %></span></td>
+        <td><%= u.rol %></td>
+        <td><%= u.activo ? 'sí' : 'no' %></td>
+      </tr>
+    <% }) %>
+  </table>
+<% } else if (!error) { %>
+  <p class="hint">La tabla usuarios está vacía.</p>
+<% } %>
+
+<a class="btn secondary" href="/">Volver al inicio</a>
+
+<%- include('../partials/footer') %>

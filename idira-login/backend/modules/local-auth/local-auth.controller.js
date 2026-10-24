@@ -36,6 +36,7 @@ async function login(req, res, next) {
   req.session.regenerate((err) => {
     if (err) return next(err);
     req.session.user = result.user;
+    req.session.rol = result.rol;
     res.redirect('/');
   });
 }
