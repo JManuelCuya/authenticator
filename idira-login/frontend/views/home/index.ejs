@@ -36,6 +36,7 @@
   </table>
 <% } %>
 
+<% if (esAdmin) { %><a class="btn" href="/admin/migracion">Migrar usuarios a Idira</a><% } %>
 <a class="btn secondary" href="/auth/logout">Cerrar sesión</a>
 
 <%- include('../partials/footer') %>

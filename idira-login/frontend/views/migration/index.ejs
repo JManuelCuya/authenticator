@@ -1,0 +1,47 @@
+<%- include('../partials/header', { title: 'Migrar usuarios' }) %>
+
+<h1>Migrar usuarios a Idira</h1>
+<p>Usuarios de la base propia de la app (tabla <code>usuarios</code>). Los seleccionados se crean en el
+Cloud Directory de Idira con una clave temporal y se agregan al rol de la app SAML.</p>
+
+<% if (error) { %><p class="error"><%= error %></p><% } %>
+<% if (!api.configured) { %>
+  <p class="error">API de Idira no configurada. Faltan en Entorno: <%= api.missing.join(', ') %></p>
+<% } %>
+<% if (api.configured && !api.roleId) { %>
+  <p class="hint">Falta IDIRA_API_ROLE_ID: los usuarios se crearán, pero habrá que asignarlos a la app a mano.</p>
+<% } %>
+
+<% if (usuarios.length) { %>
+  <form method="post" action="/admin/migracion">
+    <table>
+      <tr><td></td><td>código</td><td>usuario / correo</td><td>estado</td></tr>
+      <% usuarios.forEach((u) => { %>
+        <tr>
+          <td>
+            <% if (u.estado === 'pendiente') { %>
+              <input type="checkbox" name="codigos" value="<%= u.codigo %>" checked aria-label="Migrar <%= u.codigo %>">
+            <% } %>
+          </td>
+          <td><%= u.codigo %></td>
+          <td><%= u.usuario %><br><span class="hint"><%= u.correo %></span></td>
+          <td>
+            <%= u.estado %>
+            <% if (u.migrado_en) { %><br><span class="hint"><%= new Date(u.migrado_en).toISOString().slice(0, 16).replace('T', ' ') %></span><% } %>
+          </td>
+        </tr>
+      <% }) %>
+    </table>
+    <% if (usuarios.some((u) => u.estado === 'pendiente')) { %>
+      <button class="btn" type="submit" <%= api.configured ? '' : 'disabled' %>>Migrar seleccionados</button>
+    <% } else { %>
+      <p class="hint">No hay usuarios pendientes: todos están migrados o inactivos.</p>
+    <% } %>
+  </form>
+<% } else if (!error) { %>
+  <p class="hint">La tabla usuarios está vacía.</p>
+<% } %>
+
+<a class="link" href="/">Volver al inicio</a>
+
+<%- include('../partials/footer') %>

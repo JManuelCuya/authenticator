@@ -1,0 +1,30 @@
+<%- include('../partials/header', { title: 'Resultado de la migración' }) %>
+
+<h1>Resultado de la migración</h1>
+<p>Creados: <%= resultados.filter((r) => r.estado === 'creado').length %> ·
+   Con error: <%= resultados.filter((r) => r.estado === 'error').length %></p>
+
+<% if (resultados.some((r) => r.clave)) { %>
+  <p class="error">Copia ahora las claves temporales: no se guardan y no se volverán a mostrar.
+  Idira pedirá cambiarlas en el primer ingreso.</p>
+<% } %>
+
+<table>
+  <tr><td>código</td><td>login en Idira</td><td>estado</td><td>clave temporal</td></tr>
+  <% resultados.forEach((r) => { %>
+    <tr>
+      <td><%= r.codigo %></td>
+      <td><%= r.login %></td>
+      <td><%= r.estado %><% if (r.mensaje) { %><br><span class="hint"><%= r.mensaje %></span><% } %></td>
+      <td><code><%= r.clave %></code></td>
+    </tr>
+  <% }) %>
+</table>
+
+<% if (omitidos.length) { %>
+  <p class="hint">Omitidos (ya migrados, inactivos o inexistentes): <%= omitidos.join(', ') %></p>
+<% } %>
+
+<a class="btn secondary" href="/admin/migracion">Volver a la lista</a>
+
+<%- include('../partials/footer') %>

@@ -125,8 +125,9 @@ Directory de Idira, y después la app los **reconoce** en su base al entrar.
    ```
 4. En **idira-login → Entorno**, agrega
    `DATABASE_URL=postgres://USUARIO:CLAVE@botgv_idira-db:5432/NOMBRE_BD` y vuelve a implementar.
-5. Para ejecutar los scripts **desde tu PC**, expón un puerto en el servicio `idira-db` y usa en tu
-   `.env` local `DATABASE_URL` con la IP del VPS y ese puerto.
+
+La primera vez que se abre la página de migración, la app agrega sola dos columnas de seguimiento
+a la tabla: `idira_uuid` y `migrado_en`.
 
 ### Qué necesita el cliente (para migrar por API)
 - **Usuario de servicio** marcado como *Is OAuth confidential client*, en un rol con **User
@@ -143,22 +144,35 @@ Directory de Idira, y después la app los **reconoce** en su base al entrar.
 5. ¿Qué **usuarios de prueba** migramos? ¿Les llega la clave temporal o la definen ellos?
 6. Alternativa sin API: ¿prefieren cargarlos con **Bulk User Import** (CSV) desde el portal?
 
-### Pasos
-```bash
-# 1. Exportar los usuarios activos de la tabla usuarios al CSV
-node scripts/exportar-bd.js
-# 2. Ver lo que se haría, sin crear nada
-node scripts/crear-usuarios.js scripts/usuarios.csv --dry-run
-# 3. Crear en Idira y agregar al rol de la app
-node scripts/crear-usuarios.js scripts/usuarios.csv
+### Configuración en Easypanel (idira-login → Entorno)
 ```
-El resultado, con UUID y claves temporales, queda en `scripts/salida/`, que no se sube a git.
+IDIRA_API_APP_ID=        (Application ID de la app OAuth2 Client)
+IDIRA_API_CLIENT_ID=     (usuario de servicio)
+IDIRA_API_CLIENT_SECRET= (clave del usuario de servicio)
+IDIRA_API_SCOPE=         (nombre del scope)
+IDIRA_API_ROLE_ID=       (rol asignado a la app SAML)
+IDIRA_LOGIN_SUFFIX=      (sufijo de login del tenant)
+ADMIN_USERS=             (tu login o correo de Idira; puede ser más de uno, separados por coma)
+```
+Después, **Implementar**.
 
-4. Abrir la app → **Ingresar con Idira (SAML)** → loguearse con el usuario migrado (clave temporal → la cambia).
+### Pasos (desde la web, sin scripts ni puertos expuestos)
+1. Entra a la app con **Ingresar con Idira (SAML)** usando una cuenta que esté en `ADMIN_USERS`.
+2. En el inicio, pulsa **Migrar usuarios a Idira** (`/admin/migracion`).
+3. La lista muestra cada usuario de la tabla con su estado: **pendiente**, **migrado** o **inactivo**.
+4. Marca los pendientes y pulsa **Migrar seleccionados**. Por cada uno, la app:
+   - crea el usuario en Idira (`/CDirectoryService/CreateUser`) con una **clave temporal**, que Idira pide cambiar en el primer ingreso;
+   - guarda su `idira_uuid` en la tabla, para que no se migre dos veces;
+   - y al final los agrega todos al rol de la app (`/Roles/UpdateRole`).
+5. **Copia las claves temporales** de la pantalla de resultado: no se guardan en ningún lado.
+6. Cierra sesión y entra con un usuario migrado → cambia la clave → aparece su código y rol.
+
+> Alternativa por terminal: `scripts/exportar-bd.js` + `scripts/crear-usuarios.js` (necesitan acceso a la base desde tu PC).
 
 ### Resultado esperado y evidencia
 - Entra a la app, y en **Usuario en la base de la app** aparece su **código y rol** (por ejemplo `PE0001 · admin`).
-- Captura de la pantalla de inicio, el CSV de `scripts/salida/` (sin claves) y la línea `login-ok`, que incluye el campo `interno`.
+- Captura del resultado de la migración (tapando las claves), de la pantalla de inicio, y de las líneas `[MIGRACION]` y `login-ok` de los logs.
+- Repetir la migración del mismo usuario → aparece en *Omitidos* (no se duplica).
 - Prueba negativa: un usuario de Idira que **no** está en la base → entra, pero aparece *No está registrado*.
 
 ---
@@ -180,4 +194,6 @@ Busca en la tabla `usuarios` de Postgres (sin distinguir mayúsculas), en este o
 | `InResponseTo is not valid` | Se inició el login desde el portal de Idira (IdP-initiated) o se reintentó una respuesta vieja |
 | Entra, pero aparece *No está registrado* | El NameID o el correo no coinciden con la tabla `usuarios` |
 | *Base de datos no configurada* / *No se pudo consultar* | Falta `DATABASE_URL` en Entorno, o el host o la clave están mal |
-| Script: `No se pudo obtener el token` | App OAuth2, usuario de servicio o scope mal configurados |
+| `No se pudo obtener el token` | App OAuth2, usuario de servicio o scope mal configurados |
+| *Sin acceso* en `/admin/migracion` | Tu login o correo de Idira no está en `ADMIN_USERS` |
+| `The user name is already in use` | El usuario ya existe en Idira (creado a mano o desde otro directorio) |

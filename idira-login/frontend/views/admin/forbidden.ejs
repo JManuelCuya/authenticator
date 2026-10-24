@@ -1,0 +1,12 @@
+<%- include('../partials/header', { title: 'Sin acceso' }) %>
+
+<h1>Sin acceso</h1>
+<p>Esta sección es solo para administradores. Tu sesión es <code><%= user.usuario %></code>.</p>
+<% if (sinAdmins) { %>
+  <p class="hint">No hay administradores configurados: agrega tu login o correo de Idira en la variable
+  <code>ADMIN_USERS</code> del Entorno y vuelve a implementar.</p>
+<% } %>
+
+<a class="btn secondary" href="/">Volver al inicio</a>
+
+<%- include('../partials/footer') %>

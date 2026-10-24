@@ -18,6 +18,17 @@ const config = {
     tenantUrl: (env.IDIRA_TENANT_URL || '').replace(/\/$/, ''),
     tenantId: env.IDIRA_TENANT_ID || '',
   },
+  // API de administración de Idira (migración de usuarios): app OAuth2 Client + usuario de servicio
+  idiraApi: {
+    appId: env.IDIRA_API_APP_ID || '',
+    clientId: env.IDIRA_API_CLIENT_ID || '',
+    clientSecret: env.IDIRA_API_CLIENT_SECRET || '',
+    scope: env.IDIRA_API_SCOPE || '',
+    roleId: env.IDIRA_API_ROLE_ID || '',
+    suffix: env.IDIRA_LOGIN_SUFFIX || '',
+  },
+  // Usuarios (login o correo de Idira) que pueden entrar a /admin, separados por coma
+  adminUsers: (env.ADMIN_USERS || '').split(',').map((u) => u.trim().toLowerCase()).filter(Boolean),
   saml: {
     // Datos que entrega Idira al crear la app SAML
     idpSsoUrl: env.SAML_IDP_SSO_URL || '',
@@ -44,6 +55,16 @@ config.idira.missing = Object.entries({ IDIRA_TENANT_URL: config.idira.tenantUrl
   .filter(([, v]) => !v)
   .map(([k]) => k);
 config.idira.configured = config.idira.missing.length === 0;
+config.idiraApi.missing = Object.entries({
+  IDIRA_TENANT_URL: config.idira.tenantUrl,
+  IDIRA_API_APP_ID: config.idiraApi.appId,
+  IDIRA_API_CLIENT_ID: config.idiraApi.clientId,
+  IDIRA_API_CLIENT_SECRET: config.idiraApi.clientSecret,
+  IDIRA_API_SCOPE: config.idiraApi.scope,
+})
+  .filter(([, v]) => !v)
+  .map(([k]) => k);
+config.idiraApi.configured = config.idiraApi.missing.length === 0;
 
 if (!config.baseUrl || !config.sessionSecret) {
   console.error('Faltan BASE_URL o SESSION_SECRET en .env');
