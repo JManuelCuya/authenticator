@@ -1,11 +1,13 @@
 // Controlador: traduce HTTP <-> servicio. Lee el formulario, llama al servicio y decide qué vista
 // o redirección responder según el resultado.
 const authService = require('./auth.service');
+const { log } = require('../../integrations/idira.client');
 
 const NEXT_STEP = { mfa: '/auth/mfa', code: '/auth/mfa/codigo', wait: '/auth/mfa/esperar' };
 
 function respond(req, res, next, outcome) {
   if (outcome.status === 'success') {
+    log('login-ok', { ip: req.ip, usuario: outcome.user.usuario, correo: outcome.user.correo });
     // Sesión nueva tras autenticar (evita session fixation)
     return req.session.regenerate((err) => {
       if (err) return next(err);
@@ -13,8 +15,12 @@ function respond(req, res, next, outcome) {
       res.redirect('/');
     });
   }
-  if (NEXT_STEP[outcome.status]) return res.redirect(NEXT_STEP[outcome.status]);
+  if (NEXT_STEP[outcome.status]) {
+    log('siguiente-paso', { ip: req.ip, paso: outcome.status });
+    return res.redirect(NEXT_STEP[outcome.status]);
+  }
 
+  log('login-fallido', { ip: req.ip, motivo: outcome.message });
   req.session.flow = null;
   res.status(401).render('auth/login', { error: outcome.message, username: '' });
 }
@@ -25,6 +31,7 @@ async function login(req, res, next) {
   const { username = '', password = '' } = req.body;
   if (!res.locals.idira.configured) return res.render('auth/login', { error: '', username });
 
+  log('login-inicio', { ip: req.ip, usuario: username });
   const { flow, outcome } = await authService.login(username, password);
   req.session.flow = flow;
   respond(req, res, next, outcome);
@@ -35,6 +42,7 @@ const showMfa = (req, res) =>
 
 async function chooseMechanism(req, res, next) {
   const outcome = await authService.chooseMechanism(req.session.flow, req.body.id);
+  log('mfa-elegido', { ip: req.ip, mecanismo: req.session.flow.mech && req.session.flow.mech.label });
   respond(req, res, next, outcome);
 }
 

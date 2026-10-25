@@ -1,4 +1,4 @@
-const { IdiraError } = require('../integrations/idira.client');
+const { IdiraError, log } = require('../integrations/idira.client');
 
 // Rutas inexistentes
 const notFound = (req, res) => res.redirect('/');
@@ -7,7 +7,8 @@ const notFound = (req, res) => res.redirect('/');
 // Cualquier otro error: mensaje genérico (el detalle queda en el log del servidor).
 // eslint-disable-next-line no-unused-vars
 const errorHandler = (err, req, res, next) => {
-  console.error(err instanceof IdiraError ? `Idira: ${err.message}` : err);
+  if (err instanceof IdiraError) log('login-error', { ip: req.ip, ruta: req.originalUrl, mensaje: err.message });
+  else console.error(err);
   if (req.session) req.session.flow = null;
 
   const isIdira = err instanceof IdiraError;
