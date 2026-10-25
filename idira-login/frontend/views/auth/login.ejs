@@ -8,8 +8,11 @@
 <% } %>
 
 <form method="post" action="<%= idira.configured ? '/auth/login' : '/auth/local/login' %>">
-  <label for="u">Usuario o correo</label>
-  <input id="u" name="username" autocomplete="username" value="<%= username %>" required autofocus>
+  <label for="u"><%= idira.configured && dbEnabled ? 'Código o usuario' : idira.configured ? 'Usuario' : 'Código' %></label>
+  <input id="u" name="username" autocomplete="username" value="<%= username %>" placeholder="<%= dbEnabled ? 'Ej. PE0001' : '' %>" required autofocus>
+  <% if (idira.configured && dbEnabled) { %>
+    <p class="hint">Base de la app: tu código (ej. PE0001). Idira: tu usuario de Idira.</p>
+  <% } %>
   <label for="p">Contraseña</label>
   <input id="p" name="password" type="password" autocomplete="current-password" required>
   <% if (idira.configured) { %>

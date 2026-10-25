@@ -180,7 +180,7 @@ Después, **Implementar**.
 ## Login con la base de la app (sin Idira)
 
 Además de SAML y del formulario contra Idira, el login tiene el botón **"Ingresar con la base de la app"**.
-Ese botón valida el usuario (o correo) y la contraseña directamente en la tabla `usuarios` de Postgres.
+Ese botón valida el **código** del usuario (columna `codigo`, ej. `PE0001`) y la contraseña directamente en la tabla `usuarios` de Postgres.
 Sirve para comparar el login propio con el login delegado a Idira.
 
 - La contraseña se guarda como **hash bcrypt** (extensión `pgcrypto` de Postgres) en la columna
@@ -215,7 +215,7 @@ SELECT codigo, usuario, activo, clave_hash IS NOT NULL AS tiene_clave FROM usuar
 
 ### Prueba
 1. Asigna una clave a un usuario de la tabla con el `UPDATE` de arriba.
-2. En el login, escribe su usuario (o correo) y la clave → **Ingresar con la base de la app**.
+2. En el login, escribe su **código** (ej. `PE0001`) y la clave → **Ingresar con la base de la app**.
 3. En el inicio debe aparecer `metodo: Base de datos propia`, y en *Usuario en la base de la app*, su código y rol.
 
 ---
@@ -261,9 +261,9 @@ UPDATE usuarios SET rol = 'docente' WHERE usuario = 'alumno.prueba';
 > `requirePermission('codigo')`. Roles y asignaciones nuevas, en cambio, son solo SQL.
 
 ### Prueba
-1. **admin** → **Ingresar con la base de la app** → ve **Panel alumno** y **Panel docente**, y los dos abren.
-2. **docente.prueba** → ve solo **Panel docente**; `/panel-alumno` → **Sin acceso**.
-3. **alumno.prueba** → ve solo **Panel alumno**; `/panel-docente` → **Sin acceso**.
+1. **admin** (código `PE0001`) → **Ingresar con la base de la app** → ve **Panel alumno** y **Panel docente**, y los dos abren.
+2. **docente** (código `DO0001`) → ve solo **Panel docente**; `/panel-alumno` → **Sin acceso**.
+3. **alumno** (código `AL0001`) → ve solo **Panel alumno**; `/panel-docente` → **Sin acceso**.
 
 ---
 

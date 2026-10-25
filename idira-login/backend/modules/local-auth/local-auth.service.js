@@ -14,19 +14,20 @@ async function ensureSchema(pool) {
   schemaReady = true;
 }
 
+// El usuario se identifica solo por su código (columna "codigo", ej. PE0001), sin distinguir mayúsculas.
 // Devuelve { user } si las credenciales son válidas, o { error } con un mensaje para mostrar
-async function login(identificador, password) {
+async function login(codigo, password) {
   const pool = getPool();
   if (!pool) return { error: 'Base de datos no configurada (falta DATABASE_URL)' };
   await ensureSchema(pool);
 
-  const id = String(identificador || '').trim().toLowerCase();
+  const id = String(codigo || '').trim().toLowerCase();
   const clave = String(password || '');
   const { rows } = await pool.query(
     `SELECT codigo, usuario, correo, nombre, rol, activo,
             (clave_hash IS NOT NULL AND clave_hash = crypt($2, clave_hash)) AS clave_ok
        FROM usuarios
-      WHERE LOWER(usuario) = $1 OR LOWER(correo) = $1
+      WHERE LOWER(codigo) = $1
       LIMIT 1`,
     [id, clave]
   );
@@ -35,14 +36,15 @@ async function login(identificador, password) {
   if (!u) {
     // Mismo costo que un login real, para no revelar qué usuarios existen
     await pool.query("SELECT crypt($1, gen_salt('bf'))", [clave]);
-    return { error: 'Usuario o contraseña incorrectos.' };
+    return { error: 'Código o contraseña incorrectos.' };
   }
-  if (!u.clave_ok) return { error: 'Usuario o contraseña incorrectos.' };
+  if (!u.clave_ok) return { error: 'Código o contraseña incorrectos.' };
   if (!u.activo) return { error: 'El usuario está inactivo en la base de la app.' };
 
   return {
     rol: u.rol,
     user: {
+      codigo: u.codigo,
       usuario: u.usuario,
       nombre: u.nombre,
       correo: u.correo,
