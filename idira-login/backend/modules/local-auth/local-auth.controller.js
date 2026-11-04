@@ -8,7 +8,7 @@ function log(req, evento, datos) {
 
 async function login(req, res, next) {
   const { username = '', password = '' } = req.body;
-  const fail = (error, status = 401) => res.status(status).render('auth/login', { error, username });
+  const fail = (error, status = 401) => res.status(status).render('auth/login', { error, username, form: 'local' });
 
   const minutos = limiter.blockedMinutes(req.ip, username);
   if (minutos) {

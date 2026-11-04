@@ -22,14 +22,14 @@ function respond(req, res, next, outcome) {
 
   log('login-fallido', { ip: req.ip, motivo: outcome.message });
   req.session.flow = null;
-  res.status(401).render('auth/login', { error: outcome.message, username: '' });
+  res.status(401).render('auth/login', { error: outcome.message, username: '', form: 'api' });
 }
 
 const showLogin = (req, res) => res.render('auth/login', { error: '', username: '' });
 
 async function login(req, res, next) {
   const { username = '', password = '' } = req.body;
-  if (!res.locals.idira.configured) return res.render('auth/login', { error: '', username });
+  if (!res.locals.idira.configured) return res.render('auth/login', { error: '', username, form: 'api' });
 
   log('login-inicio', { ip: req.ip, usuario: username });
   const { flow, outcome } = await authService.login(username, password);

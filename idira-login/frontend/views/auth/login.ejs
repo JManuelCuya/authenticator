@@ -3,30 +3,44 @@
 <h1>Iniciar sesión</h1>
 
 <% if (error) { %><p class="error"><%= error %></p><% } %>
-<% if (!idira.configured && !dbEnabled) { %>
+<% if (!idira.configured && !dbEnabled && !samlEnabled) { %>
   <p class="error">Ni Idira ni la base de datos están configurados. Faltan en .env: <%= idira.missing.concat('DATABASE_URL').join(', ') %></p>
 <% } %>
 
-<form method="post" action="<%= idira.configured ? '/auth/login' : '/auth/local/login' %>">
-  <label for="u"><%= idira.configured && dbEnabled ? 'Código o usuario' : idira.configured ? 'Usuario' : 'Código' %></label>
-  <input id="u" name="username" autocomplete="username" value="<%= username %>" placeholder="<%= dbEnabled ? 'Ej. PE0001' : '' %>" required autofocus>
-  <% if (idira.configured && dbEnabled) { %>
-    <p class="hint">Base de la app: tu código (ej. PE0001). Idira: tu usuario de Idira.</p>
-  <% } %>
-  <label for="p">Contraseña</label>
-  <input id="p" name="password" type="password" autocomplete="current-password" required>
-  <% if (idira.configured) { %>
-    <button class="btn" type="submit" formaction="/auth/login">Ingresar con Idira</button>
-  <% } %>
-  <% if (dbEnabled) { %>
-    <button class="btn <%= idira.configured ? 'secondary' : '' %>" type="submit" formaction="/auth/local/login">Ingresar con la base de la app</button>
-  <% } %>
-</form>
+<%# Idira (SAML): la clave se escribe en la pantalla de Idira, no aquí %>
+<a class="btn" href="/auth/saml/login">Ingresar con Idira</a>
+<p class="hint"><%= samlEnabled ? 'Te lleva a la pantalla de Idira (clave y MFA de Idira).' : 'SAML aún no configurado.' %></p>
 
-<div class="divider"><span>o</span></div>
+<% if (dbEnabled) { %>
+  <div class="divider"><span>o</span></div>
 
-<a class="btn secondary" href="/auth/saml/login">Ingresar con Idira (SAML)</a>
-<% if (!samlEnabled) { %><p class="hint">SAML aún no configurado.</p><% } %>
+  <%# Base de la app: al elegirlo se pide el código y la clave guardada en la base %>
+  <details class="method" <%= locals.form === 'local' ? 'open' : '' %>>
+    <summary class="btn secondary">Ingresar con la base de la app</summary>
+    <form method="post" action="/auth/local/login">
+      <label for="lu">Código</label>
+      <input id="lu" name="username" autocomplete="username" value="<%= locals.form === 'local' ? username : '' %>" placeholder="Ej. PE0001" required>
+      <label for="lp">Contraseña</label>
+      <input id="lp" name="password" type="password" autocomplete="current-password" required>
+      <button class="btn" type="submit">Ingresar</button>
+    </form>
+  </details>
+<% } %>
+
+<% if (idira.configured) { %>
+  <%# Login por la API de Idira: aquí la app sí recibe la clave de Idira (solo para pruebas) %>
+  <details class="method" <%= locals.form === 'api' ? 'open' : '' %>>
+    <summary class="link">Probar el login por API de Idira</summary>
+    <form method="post" action="/auth/login">
+      <label for="au">Usuario de Idira</label>
+      <input id="au" name="username" autocomplete="username" value="<%= locals.form === 'api' ? username : '' %>" placeholder="Ej. usuario@dominio" required>
+      <label for="ap">Contraseña de Idira</label>
+      <input id="ap" name="password" type="password" autocomplete="current-password" required>
+      <button class="btn" type="submit">Ingresar con la API de Idira</button>
+    </form>
+  </details>
+<% } %>
+
 <a class="link" href="/auth/saml/info">Datos SAML para el IdP (ACS URL, Entity ID)</a>
 
 <%- include('../partials/footer') %>

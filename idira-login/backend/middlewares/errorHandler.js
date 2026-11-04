@@ -15,6 +15,8 @@ const errorHandler = (err, req, res, next) => {
   res.status(isIdira ? 401 : 500).render('auth/login', {
     error: isIdira ? err.message : 'Ocurrió un error inesperado, intenta de nuevo.',
     username: (req.body && req.body.username) || '',
+    // Los IdiraError vienen del login por API: se reabre ese formulario
+    form: isIdira ? 'api' : undefined,
   });
 };
 
