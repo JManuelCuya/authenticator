@@ -105,5 +105,5 @@ td:first-child { font-weight: 600; width: 35%; }
 /* Opciones de login que se despliegan al elegirlas */
 .method summary { list-style: none; cursor: pointer; }
 .method summary::-webkit-details-marker { display: none; }
-.method[open] summary.link { color: var(--text); }
+.method form { padding-bottom: 4px; }
 code { font-size: 0.8rem; word-break: break-all; }
