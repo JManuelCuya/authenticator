@@ -6,6 +6,10 @@ const readCertificate = require('../../helpers/certificate');
 
 let saml = null;
 
+const CLOCK_SKEW_MS = 5 * 60 * 1000;
+// Si la aserción no trae NotOnOrAfter, su ID se recuerda este tiempo
+const MAX_ASSERTION_MEMORY_MS = 60 * 60 * 1000;
+
 function getSaml() {
   if (saml) return saml;
   if (!config.saml.configured) throw new Error(`SAML no configurado. Faltan en .env: ${config.saml.missing.join(', ')}`);
@@ -21,14 +25,35 @@ function getSaml() {
     // Exige una firma válida en la respuesta o en la aserción (la que Idira firme)
     wantAuthnResponseSigned: false,
     wantAssertionsSigned: false,
-    // Solo se aceptan respuestas a solicitudes iniciadas por esta app
-    validateInResponseTo: 'always',
+    // Login iniciado por la app (trae InResponseTo y se valida) o desde el portal de Idira
+    // (IdP-initiated, sin InResponseTo). El reenvío de respuestas se bloquea en markAssertionUsed.
+    validateInResponseTo: 'ifPresent',
     identifierFormat: null,
     // Sin exigir un AuthnContext concreto: Idira aplica su propia política (contraseña, MFA...)
     disableRequestedAuthnContext: true,
-    acceptedClockSkewMs: 5 * 60 * 1000,
+    acceptedClockSkewMs: CLOCK_SKEW_MS,
   });
   return saml;
+}
+
+// Aserciones ya usadas (ID -> hasta cuándo recordarla). Cada respuesta de Idira sirve una sola vez,
+// así una respuesta capturada no se puede reenviar al ACS. En memoria: alcanza con un solo
+// contenedor; con varias réplicas habría que guardarlas en Postgres.
+const usedAssertions = new Map();
+
+function markAssertionUsed(profile) {
+  const assertion = profile.getAssertion().Assertion;
+  const id = assertion.$ && assertion.$.ID;
+  if (!id) throw new Error('La aserción SAML no tiene ID');
+
+  const now = Date.now();
+  for (const [key, expira] of usedAssertions) if (expira <= now) usedAssertions.delete(key);
+  if (usedAssertions.has(id)) throw new Error('Respuesta SAML ya utilizada (posible reenvío)');
+
+  const conditions = (assertion.Conditions || [])[0];
+  const notOnOrAfter = Date.parse(conditions && conditions.$ && conditions.$.NotOnOrAfter);
+  usedAssertions.set(id, (Number.isNaN(notOnOrAfter) ? now + MAX_ASSERTION_MEMORY_MS : notOnOrAfter) + CLOCK_SKEW_MS);
+  return id;
 }
 
 // URL de Idira a la que se redirige al usuario para autenticarse
@@ -38,6 +63,7 @@ const getLoginUrl = () => getSaml().getAuthorizeUrlAsync('', undefined, {});
 async function handleAcs(body) {
   const { profile } = await getSaml().validatePostResponseAsync(body);
   if (!profile) throw new Error('Idira no envió un perfil de usuario');
+  const assertionId = markAssertionUsed(profile);
 
   const attr = (...names) => {
     for (const n of names) {
@@ -57,6 +83,9 @@ async function handleAcs(body) {
 
   // Lo que envió Idira tal cual, para depurar y para saber con qué atributos se puede cruzar al usuario
   const detalle = {
+    // sp-initiated: desde el botón de la app · idp-initiated: desde el portal de Idira
+    flujo: profile.inResponseTo ? 'sp-initiated' : 'idp-initiated',
+    assertionId,
     issuer: profile.issuer,
     nameID: profile.nameID,
     nameIDFormat: profile.nameIDFormat,

@@ -274,6 +274,24 @@ Busca en la tabla `usuarios` de Postgres (sin distinguir mayúsculas), en este o
 2. **usuario** o **código** igual al NameID.
 3. **usuario sin dominio**: `luis.arana@corp.local` o `CORP\luis.arana` → `luis.arana` (útil con AD).
 
+## Entrar desde el portal de Idira (IdP-initiated)
+
+La app acepta el login SAML por dos caminos:
+
+| Flujo | Cómo se entra | Qué valida la app |
+|---|---|---|
+| `sp-initiated` | Botón **Ingresar con Idira (SAML)** de la app | Firma, Audience, Destination, vigencia **y** que `InResponseTo` sea de una solicitud de la app |
+| `idp-initiated` | Clic en el ícono de la app en el **portal de Idira** | Firma, Audience, Destination y vigencia (no hay `InResponseTo`) |
+
+En los dos casos, cada respuesta sirve **una sola vez**: si alguien reenvía una respuesta ya usada,
+la app la rechaza (`Respuesta SAML ya utilizada`). En Idira no hay que configurar nada nuevo: el portal
+usa la misma ACS URL y el mismo Entity ID de la app SAML, y el ícono aparece a quien esté en sus **Permissions**.
+
+### Prueba
+1. Entra al portal de Idira con un usuario asignado a la app → clic en el ícono → debe abrir el inicio de la app.
+2. Cierra sesión y entra con el botón **Ingresar con Idira (SAML)** → debe funcionar igual.
+3. En los logs, la línea `[SAML] {"evento":"login-ok"…}` muestra `"flujo":"idp-initiated"` o `"flujo":"sp-initiated"`.
+
 ## Errores frecuentes
 
 | Mensaje / síntoma | Causa probable |
@@ -281,7 +299,8 @@ Busca en la tabla `usuarios` de Postgres (sin distinguir mayúsculas), en este o
 | Idira dice que no tienes acceso a la app | El usuario no está en el rol de la app SAML |
 | `Invalid signature` | Cambió el certificado o la app SAML; descargar la metadata de nuevo |
 | `audience mismatch` | El Entity ID en Idira no coincide con `…/auth/saml/metadata` |
-| `InResponseTo is not valid` | Se inició el login desde el portal de Idira (IdP-initiated) o se reintentó una respuesta vieja |
+| `InResponseTo is not valid` | Se reintentó una respuesta vieja, o la app se reinició entre el clic en el botón y la respuesta de Idira |
+| `Respuesta SAML ya utilizada` | Se reenvió una respuesta que ya se usó (por ejemplo, con Atrás o F5 en el ACS) |
 | Entra, pero aparece *No está registrado* | El NameID o el correo no coinciden con la tabla `usuarios` |
 | *Base de datos no configurada* / *No se pudo consultar* | Falta `DATABASE_URL` en Entorno, o el host o la clave están mal |
 | `No se pudo obtener el token` | App OAuth2, usuario de servicio o scope mal configurados |
