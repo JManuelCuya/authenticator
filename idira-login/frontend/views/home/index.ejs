@@ -31,7 +31,7 @@
     <tr><td>cruzado por</td><td><%= interno.criterio %></td></tr>
   </table>
 <% } else { %>
-  <p class="hint">No está registrado en la base de datos propia de la app. Idira lo autenticó, pero la app no tiene datos internos de este usuario.</p>
+  <p class="hint">No está registrado en la base de datos propia de la app: lo que envió Idira no es un código de la tabla de usuarios. Idira lo autenticó, pero la app no tiene datos internos de este usuario.</p>
 <% } %>
 
 <% if (saml) { %>

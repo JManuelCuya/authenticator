@@ -269,10 +269,14 @@ UPDATE usuarios SET rol = 'docente' WHERE usuario = 'alumno.prueba';
 
 ## Cómo la app cruza al usuario con su base
 
-Busca en la tabla `usuarios` de Postgres (sin distinguir mayúsculas), en este orden:
-1. **correo** igual al NameID o al atributo Email.
-2. **usuario** o **código** igual al NameID.
-3. **usuario sin dominio**: `luis.arana@corp.local` o `CORP\luis.arana` → `luis.arana` (útil con AD).
+Busca en la tabla `usuarios` de Postgres **solo por la columna `codigo`** (sin distinguir mayúsculas):
+- **Login con Idira (SAML):** el código llega como **NameID**. Para eso, la app SAML de Idira tiene un
+  Custom Logic que envía el atributo `codigo_app` del usuario como NameID (ej. `PE0001`).
+- **Login con la base de la app:** el usuario ya entra con su código.
+
+El **correo** y el **usuario** no se usan para cruzar. Si Idira envía otra cosa (por ejemplo, el login name
+`usuario@dominio` porque el usuario no tiene `codigo_app` o el Custom Logic está comentado), la app lo deja
+entrar pero **sin rol ni pantallas**. Por eso el login por la API de Idira (que envía el login name) entra sin rol.
 
 ## Entrar desde el portal de Idira (IdP-initiated)
 
@@ -301,7 +305,7 @@ usa la misma ACS URL y el mismo Entity ID de la app SAML, y el ícono aparece a 
 | `audience mismatch` | El Entity ID en Idira no coincide con `…/auth/saml/metadata` |
 | `InResponseTo is not valid` | Se reintentó una respuesta vieja, o la app se reinició entre el clic en el botón y la respuesta de Idira |
 | `Respuesta SAML ya utilizada` | Se reenvió una respuesta que ya se usó (por ejemplo, con Atrás o F5 en el ACS) |
-| Entra, pero aparece *No está registrado* | El NameID o el correo no coinciden con la tabla `usuarios` |
+| Entra, pero aparece *No está registrado* | El NameID no es un código de la tabla `usuarios`: revisa que el usuario tenga `codigo_app` en Idira y que el Custom Logic no esté comentado |
 | *Base de datos no configurada* / *No se pudo consultar* | Falta `DATABASE_URL` en Entorno, o el host o la clave están mal |
 | `No se pudo obtener el token` | App OAuth2, usuario de servicio o scope mal configurados |
 | *Sin acceso* en `/admin/migracion` | Tu login o correo de Idira no está en `ADMIN_USERS` |
